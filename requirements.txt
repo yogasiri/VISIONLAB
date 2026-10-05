@@ -1,5 +1,5 @@
 streamlit>=1.40
-opencv-python-headless==4.10.0.84
+opencv-contrib-python-headless==4.10.0.84
 numpy>=1.26
 pillow>=10.0
 deepface>=0.0.93
