@@ -1,72 +1,62 @@
 # VISIONLAB
+
 ## Computer Vision Algorithm Laboratory
 
-VisionLab is an educational Streamlit application demonstrating four computer-vision approaches:
+VISIONLAB is an interactive educational laboratory designed to demonstrate and explore important Computer Vision and Face Analysis algorithms through a professional web interface.
 
-- Template Matching
-- Viola-Jones
-- DeepFace
-- FaceNet (Facenet512 through DeepFace)
+The project allows users to understand how classical and deep-learning-based computer vision techniques work through interactive demonstrations, visual results, metrics, and explanations.
 
-## Features
-- Professional dark multi-page UI
-- Working OpenCV Template Matching
-- Working Haar Cascade face detection
-- Optional real DeepFace analysis and verification
-- Optional real FaceNet-compatible embeddings
-- Demo Gallery with prepared images
-- Graceful handling of missing models/dependencies
+---
 
-## Technology Stack
-Python, Streamlit, OpenCV, NumPy, Pillow, DeepFace.
+## 🚀 Live Demo
 
-## Project Structure
+### 🌐 Try VISIONLAB Online
+
+https://visionlab-nrwubrtihijizwebqnk9xf.streamlit.app/
+
+No installation is required to try the deployed application.
+
+---
+
+## 🎯 Algorithms Demonstrated
+
+VISIONLAB currently demonstrates four major Computer Vision techniques:
+
+### 1. Template Matching
+
+Demonstrates how OpenCV template matching can locate a smaller template image inside a larger image.
+
+**Technology:**
+- OpenCV
+- `cv2.matchTemplate()`
+- `cv2.minMaxLoc()`
+
+**Displays:**
+- Matching result
+- Similarity score
+- Match location
+- Template dimensions
+
+---
+
+### 2. Viola-Jones
+
+Demonstrates classical real-time face detection using Haar Cascade classifiers.
+
+**Technology:**
+- OpenCV
+- Haar Cascade
+- `CascadeClassifier()`
+
+**Pipeline:**
+
 ```text
-VisionLab/
-├── app.py
-├── algorithms/
-│   ├── template_matching.py
-│   ├── viola_jones.py
-│   ├── deepface.py
-│   └── facenet.py
-├── demo_images/
-├── assets/
-├── requirements.txt
-└── README.md
-```
-
-## Installation
-Use Python 3.10–3.12 for the smoothest DeepFace/TensorFlow compatibility.
-
-```bash
-pip install -r requirements.txt
-```
-
-## Running the Application
-```bash
-streamlit run app.py
-```
-
-## Demo
-Open **Demo Gallery** and launch an algorithm. Template Matching and Viola-Jones work without downloading deep-learning models.
-
-DeepFace and FaceNet download/load their required models when first used. If the environment cannot provide them, the application stays open and explains the limitation instead of generating fake results.
-
-## How Each Algorithm Works
-### Template Matching
-`cv2.matchTemplate()` slides a template over a larger image and `cv2.minMaxLoc()` selects the best match.
-
-### Viola-Jones
-OpenCV's Haar Cascade uses Haar-like features, integral images, AdaBoost and a cascade classifier to detect faces.
-
-### DeepFace
-DeepFace provides deep-learning-based facial analysis and verification.
-
-### FaceNet
-The FaceNet-compatible `Facenet512` model represents a face as an embedding vector. VisionLab compares embeddings using cosine similarity and Euclidean distance.
-
-## Future Improvements
-- Additional real-world datasets
-- More detector/model choices
-- Exportable experiment reports
-- Benchmark comparisons across algorithms
+Haar-like Features
+        ↓
+Integral Image
+        ↓
+AdaBoost
+        ↓
+Cascade Classifier
+        ↓
+Face Detection
