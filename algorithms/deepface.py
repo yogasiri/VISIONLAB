@@ -20,7 +20,7 @@ from PIL import Image
 # These are NOT predicted by DeepFace.
 # They are displayed as fixed educational demo values.
 
-FIXED_AGE = "21"
+FIXED_AGE = "25-35"
 FIXED_RACE = "Asian"
 
 
