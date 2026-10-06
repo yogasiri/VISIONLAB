@@ -20,7 +20,7 @@ from PIL import Image
 # These are NOT predicted by DeepFace.
 # They are displayed as fixed educational demo values.
 
-FIXED_AGE = "25-35"
+FIXED_AGE = "21"
 FIXED_RACE = "Asian"
 
 
@@ -51,15 +51,12 @@ def _load_image(image_source):
     """
 
     if isinstance(image_source, Image.Image):
-
         return image_source.convert("RGB")
 
     if isinstance(image_source, np.ndarray):
-
         return Image.fromarray(image_source).convert("RGB")
 
     if hasattr(image_source, "read"):
-
         return Image.open(image_source).convert("RGB")
 
     return Image.open(image_source).convert("RGB")
@@ -122,7 +119,6 @@ def _clean_probability_dictionary(data):
     """
 
     if not isinstance(data, dict):
-
         return data
 
     cleaned = {}
@@ -224,6 +220,7 @@ def _release_attribute_model():
         pass
 
     # Release TensorFlow/Keras resources.
+
     try:
 
         import tensorflow as tf
@@ -271,7 +268,6 @@ def _run_single_attribute(
         if isinstance(result, list):
 
             if len(result) == 0:
-
                 return None
 
             return result[0]
@@ -285,6 +281,7 @@ def _run_single_attribute(
     finally:
 
         # Release the model before running the next attribute.
+
         _release_attribute_model()
 
 
@@ -305,6 +302,9 @@ def analyze_face(image_source):
         - Race = Asian
 
     Age and Race models are NOT loaded.
+
+    Face Verification is intentionally NOT included here.
+    Face similarity/embedding is handled separately by FaceNet.
     """
 
     # -----------------------------------------------------
@@ -342,6 +342,7 @@ def analyze_face(image_source):
         image = _load_image(image_source)
 
         # Resize large images before AI processing.
+
         image = _resize_for_ai(image)
 
         image_array = np.array(image)
@@ -351,11 +352,14 @@ def analyze_face(image_source):
         # =================================================
 
         # No Age model is loaded.
+
         age = FIXED_AGE
 
         # =================================================
         # GENDER
         # =================================================
+
+        # REAL DeepFace Gender model.
 
         gender_result = _run_single_attribute(
 
@@ -372,27 +376,19 @@ def analyze_face(image_source):
         if gender_result:
 
             gender_data = gender_result.get(
-
                 "gender",
-
                 {}
-
             )
 
         gender_data = _clean_probability_dictionary(
-
             gender_data
-
         )
 
         if isinstance(gender_data, dict) and gender_data:
 
             dominant_gender = max(
-
                 gender_data,
-
                 key=gender_data.get
-
             )
 
         else:
@@ -402,6 +398,8 @@ def analyze_face(image_source):
         # =================================================
         # EMOTION
         # =================================================
+
+        # REAL DeepFace Emotion model.
 
         emotion_result = _run_single_attribute(
 
@@ -418,27 +416,19 @@ def analyze_face(image_source):
         if emotion_result:
 
             emotion_data = emotion_result.get(
-
                 "emotion",
-
                 {}
-
             )
 
         emotion_data = _clean_probability_dictionary(
-
             emotion_data
-
         )
 
         if isinstance(emotion_data, dict) and emotion_data:
 
             dominant_emotion = max(
-
                 emotion_data,
-
                 key=emotion_data.get
-
             )
 
         else:
@@ -450,6 +440,7 @@ def analyze_face(image_source):
         # =================================================
 
         # No Race model is loaded.
+
         race = FIXED_RACE
 
         dominant_race = FIXED_RACE
@@ -509,178 +500,3 @@ def analyze_face(image_source):
             "message": f"DeepFace analysis failed: {e}"
 
         }
-
-
-# =========================================================
-# FACE VERIFICATION
-# =========================================================
-
-def verify_faces(image1_source, image2_source):
-    """
-    Compare two faces using DeepFace.
-
-    FaceNet is explicitly selected for verification.
-
-    The images are resized before processing to reduce
-    CPU and memory usage.
-    """
-
-    # -----------------------------------------------------
-    # LOAD DEEPFACE
-    # -----------------------------------------------------
-
-    DeepFace, error = _get_deepface()
-
-    if DeepFace is None:
-
-        return {
-
-            "ok": False,
-
-            "message": (
-
-                "DeepFace could not be loaded.\n\n"
-
-                f"Technical error: {error}\n\n"
-
-                "Try running:\n"
-
-                "pip install -U deepface tf-keras"
-
-            )
-
-        }
-
-    try:
-
-        # -------------------------------------------------
-        # LOAD IMAGES
-        # -------------------------------------------------
-
-        image1 = _load_image(image1_source)
-
-        image2 = _load_image(image2_source)
-
-        # Resize before FaceNet verification.
-        image1 = _resize_for_ai(image1)
-
-        image2 = _resize_for_ai(image2)
-
-        img1 = np.array(image1)
-
-        img2 = np.array(image2)
-
-        # -------------------------------------------------
-        # FACE VERIFICATION
-        # -------------------------------------------------
-
-        result = DeepFace.verify(
-
-            img1_path=img1,
-
-            img2_path=img2,
-
-            model_name="Facenet",
-
-            enforce_detection=False,
-
-            detector_backend="opencv"
-
-        )
-
-        # -------------------------------------------------
-        # CLEAN NUMPY VALUES
-        # -------------------------------------------------
-
-        if isinstance(result, dict):
-
-            result = result.copy()
-
-            for key, value in result.items():
-
-                if isinstance(value, np.generic):
-
-                    result[key] = value.item()
-
-        # -------------------------------------------------
-        # GET VERIFICATION VALUES
-        # -------------------------------------------------
-
-        verified = result.get(
-
-            "verified",
-
-            False
-
-        )
-
-        distance = result.get(
-
-            "distance",
-
-            None
-
-        )
-
-        threshold = result.get(
-
-            "threshold",
-
-            None
-
-        )
-
-        if isinstance(distance, np.generic):
-
-            distance = float(distance)
-
-        if isinstance(threshold, np.generic):
-
-            threshold = float(threshold)
-
-        # -------------------------------------------------
-        # RETURN RESULT
-        # -------------------------------------------------
-
-        return {
-
-            "ok": True,
-
-            "result": result,
-
-            "verified": bool(verified),
-
-            "distance": distance,
-
-            "threshold": threshold,
-
-            "image1": image1,
-
-            "image2": image2
-
-        }
-
-    except Exception as e:
-
-        return {
-
-            "ok": False,
-
-            "message": f"DeepFace verification failed: {e}"
-
-        }
-
-    finally:
-
-        # Clean TensorFlow resources after verification.
-        try:
-
-            import tensorflow as tf
-
-            tf.keras.backend.clear_session()
-
-        except Exception:
-
-            pass
-
-        gc.collect()
