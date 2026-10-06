@@ -5,8 +5,8 @@ from PIL import Image
 
 from algorithms.template_matching import run_template_matching
 from algorithms.viola_jones import detect_faces
-from algorithms.deepface import analyze_face, verify_faces, deepface_available
-from algorithms.facenet import generate_embedding, compare_embeddings, facenet_available
+from algorithms.deepface import analyze_face, verify_faces
+from algorithms.facenet import generate_embedding, compare_embeddings
 
 BASE = Path(__file__).parent
 DEMO = BASE / "demo_images"
@@ -226,8 +226,7 @@ def deepface_page():
                 verified=r["verified"]
                 metric_card("Verification","VERIFIED" if verified else "NOT VERIFIED")
                 st.caption(f"Distance: {r.get('distance','—')}  •  Threshold: {r.get('threshold','—')}")
-    if not deepface_available():
-        st.caption("DeepFace is optional and loaded only when this page needs it. If its model/dependency is unavailable, the page remains usable and reports the issue.")
+
 
 # ---------- FaceNet ----------
 def facenet_page():
@@ -264,8 +263,7 @@ def facenet_page():
                 with m[0]: metric_card("Similarity",f'{r["similarity"]:.4f}')
                 with m[1]: metric_card("Distance",f'{r["distance"]:.4f}')
                 with m[2]: metric_card("Match", "MATCH" if r["match"] else "NO MATCH")
-    if not facenet_available():
-        st.caption("FaceNet is implemented through the FaceNet-compatible Facenet512 model exposed by DeepFace. It is loaded on demand and reports model availability instead of crashing.")
+    
 
 # ---------- Gallery ----------
 def gallery():

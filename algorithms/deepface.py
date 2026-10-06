@@ -1,7 +1,10 @@
 import os
 
-# Reduce TensorFlow resource usage on Streamlit Cloud.
+# ---------------------------------------------------------
+# REDUCE TENSORFLOW RESOURCE USAGE
 # These must be set before TensorFlow is imported.
+# ---------------------------------------------------------
+
 os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "1")
 os.environ.setdefault("TF_NUM_INTEROP_THREADS", "1")
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
@@ -11,16 +14,36 @@ import numpy as np
 from PIL import Image
 
 
+# ---------------------------------------------------------
+# FIXED DEMO VALUES
+# ---------------------------------------------------------
+# These are NOT predicted by DeepFace.
+# They are displayed as fixed educational demo values.
+
+FIXED_AGE = "25-35"
+FIXED_RACE = "Asian"
+
+
+# ---------------------------------------------------------
+# CHECK DEEPFACE
+# ---------------------------------------------------------
+
 def deepface_available():
     """
     Check whether DeepFace can be imported successfully.
     """
+
     try:
         from deepface import DeepFace
         return True
+
     except Exception:
         return False
 
+
+# ---------------------------------------------------------
+# LOAD IMAGE
+# ---------------------------------------------------------
 
 def _load_image(image_source):
     """
@@ -28,42 +51,78 @@ def _load_image(image_source):
     """
 
     if isinstance(image_source, Image.Image):
+
         return image_source.convert("RGB")
 
     if isinstance(image_source, np.ndarray):
+
         return Image.fromarray(image_source).convert("RGB")
 
     if hasattr(image_source, "read"):
+
         return Image.open(image_source).convert("RGB")
 
     return Image.open(image_source).convert("RGB")
 
 
+# ---------------------------------------------------------
+# RESIZE IMAGE FOR AI PROCESSING
+# ---------------------------------------------------------
+
+def _resize_for_ai(image, max_size=1024):
+    """
+    Resize large images before sending them to AI models.
+
+    This reduces unnecessary CPU and RAM usage while
+    keeping the image aspect ratio.
+    """
+
+    image = image.copy()
+
+    image.thumbnail((max_size, max_size))
+
+    return image
+
+
+# ---------------------------------------------------------
+# GET DEEPFACE
+# ---------------------------------------------------------
+
 def _get_deepface():
     """
-    Safely import DeepFace.
+    Safely import DeepFace only when it is required.
     """
 
     try:
+
         from deepface import DeepFace
+
         return DeepFace, None
 
     except Exception as e:
+
         return None, str(e)
 
 
+# ---------------------------------------------------------
+# CLEAN PROBABILITY DICTIONARY
+# ---------------------------------------------------------
+
 def _clean_probability_dictionary(data):
     """
-    Convert NumPy values into normal Python floats.
+    Convert NumPy probability values into normal Python floats.
 
     Example:
+
         np.float32(88.50042)
 
     becomes:
+
         88.5
     """
 
     if not isinstance(data, dict):
+
         return data
 
     cleaned = {}
@@ -71,17 +130,24 @@ def _clean_probability_dictionary(data):
     for key, value in data.items():
 
         try:
+
             cleaned[key] = round(float(value), 2)
 
         except (TypeError, ValueError):
+
             cleaned[key] = value
 
     return cleaned
 
 
+# ---------------------------------------------------------
+# CLEAN DEEPFACE RESULT
+# ---------------------------------------------------------
+
 def _clean_deepface_result(result):
     """
-    Clean DeepFace output.
+    Clean DeepFace output so NumPy values do not appear
+    in the Streamlit interface.
     """
 
     if isinstance(result, list):
@@ -95,18 +161,15 @@ def _clean_deepface_result(result):
                 item = item.copy()
 
                 if "gender" in item:
+
                     item["gender"] = _clean_probability_dictionary(
                         item["gender"]
                     )
 
                 if "emotion" in item:
+
                     item["emotion"] = _clean_probability_dictionary(
                         item["emotion"]
-                    )
-
-                if "race" in item:
-                    item["race"] = _clean_probability_dictionary(
-                        item["race"]
                     )
 
             cleaned_results.append(item)
@@ -118,18 +181,15 @@ def _clean_deepface_result(result):
         result = result.copy()
 
         if "gender" in result:
+
             result["gender"] = _clean_probability_dictionary(
                 result["gender"]
             )
 
         if "emotion" in result:
+
             result["emotion"] = _clean_probability_dictionary(
                 result["emotion"]
-            )
-
-        if "race" in result:
-            result["race"] = _clean_probability_dictionary(
-                result["race"]
             )
 
         return result
@@ -137,14 +197,16 @@ def _clean_deepface_result(result):
     return result
 
 
+# ---------------------------------------------------------
+# RELEASE DEEPFACE ATTRIBUTE MODEL
+# ---------------------------------------------------------
+
 def _release_attribute_model():
     """
-    Release cached DeepFace demographic models.
+    Release cached DeepFace facial attribute models.
 
-    DeepFace keeps Age, Gender, Emotion and Race models
-    inside a global model cache. Clearing the facial
-    attribute cache prevents all four large models from
-    staying in memory at the same time.
+    This prevents Gender and Emotion models from staying
+    unnecessarily in memory at the same time.
     """
 
     try:
@@ -158,9 +220,10 @@ def _release_attribute_model():
                 modeling.cached_models["facial_attribute"].clear()
 
     except Exception:
+
         pass
 
-    # Ask TensorFlow/Keras to release unused memory.
+    # Release TensorFlow/Keras resources.
     try:
 
         import tensorflow as tf
@@ -168,10 +231,15 @@ def _release_attribute_model():
         tf.keras.backend.clear_session()
 
     except Exception:
+
         pass
 
     gc.collect()
 
+
+# ---------------------------------------------------------
+# RUN ONE DEEPFACE ATTRIBUTE
+# ---------------------------------------------------------
 
 def _run_single_attribute(
     DeepFace,
@@ -181,17 +249,21 @@ def _run_single_attribute(
     """
     Run one DeepFace attribute at a time.
 
-    This is intentionally done one-by-one to reduce
-    peak RAM usage on Streamlit Cloud.
+    Only Gender and Emotion use actual DeepFace models.
     """
 
     try:
 
         result = DeepFace.analyze(
+
             img_path=image_array,
+
             actions=[action],
+
             enforce_detection=False,
+
             detector_backend="opencv"
+
         )
 
         result = _clean_deepface_result(result)
@@ -199,48 +271,66 @@ def _run_single_attribute(
         if isinstance(result, list):
 
             if len(result) == 0:
+
                 return None
 
             return result[0]
 
         if isinstance(result, dict):
+
             return result
 
         return None
 
     finally:
 
-        # Release the model before loading the next one.
+        # Release the model before running the next attribute.
         _release_attribute_model()
 
+
+# =========================================================
+# DEEPFACE FACE ANALYSIS
+# =========================================================
 
 def analyze_face(image_source):
     """
     Analyze a face using DeepFace.
 
-    Age, gender, emotion and race are analyzed
-    one at a time to reduce memory usage.
+    REAL AI ANALYSIS:
+        - Gender
+        - Emotion
 
-    Returns:
-        age
-        gender probabilities
-        emotion probabilities
-        race probabilities
-        dominant values
+    FIXED DEMO VALUES:
+        - Age = 21
+        - Race = Asian
+
+    Age and Race models are NOT loaded.
     """
+
+    # -----------------------------------------------------
+    # LOAD DEEPFACE
+    # -----------------------------------------------------
 
     DeepFace, error = _get_deepface()
 
     if DeepFace is None:
 
         return {
+
             "ok": False,
+
             "message": (
+
                 "DeepFace could not be loaded.\n\n"
+
                 f"Technical error: {error}\n\n"
+
                 "Try running:\n"
+
                 "pip install -U deepface tf-keras"
+
             )
+
         }
 
     try:
@@ -251,34 +341,30 @@ def analyze_face(image_source):
 
         image = _load_image(image_source)
 
+        # Resize large images before AI processing.
+        image = _resize_for_ai(image)
+
         image_array = np.array(image)
 
-        # -------------------------------------------------
-        # AGE
-        # -------------------------------------------------
+        # =================================================
+        # FIXED AGE
+        # =================================================
 
-        age_result = _run_single_attribute(
-            DeepFace,
-            image_array,
-            "age"
-        )
+        # No Age model is loaded.
+        age = FIXED_AGE
 
-        if age_result is None:
-            return {
-                "ok": False,
-                "message": "DeepFace could not analyze the face."
-            }
-
-        age = age_result.get("age", "N/A")
-
-        # -------------------------------------------------
+        # =================================================
         # GENDER
-        # -------------------------------------------------
+        # =================================================
 
         gender_result = _run_single_attribute(
+
             DeepFace,
+
             image_array,
+
             "gender"
+
         )
 
         gender_data = {}
@@ -286,33 +372,45 @@ def analyze_face(image_source):
         if gender_result:
 
             gender_data = gender_result.get(
+
                 "gender",
+
                 {}
+
             )
 
         gender_data = _clean_probability_dictionary(
+
             gender_data
+
         )
 
         if isinstance(gender_data, dict) and gender_data:
 
             dominant_gender = max(
+
                 gender_data,
+
                 key=gender_data.get
+
             )
 
         else:
 
             dominant_gender = "N/A"
 
-        # -------------------------------------------------
+        # =================================================
         # EMOTION
-        # -------------------------------------------------
+        # =================================================
 
         emotion_result = _run_single_attribute(
+
             DeepFace,
+
             image_array,
+
             "emotion"
+
         )
 
         emotion_data = {}
@@ -320,74 +418,66 @@ def analyze_face(image_source):
         if emotion_result:
 
             emotion_data = emotion_result.get(
+
                 "emotion",
+
                 {}
+
             )
 
         emotion_data = _clean_probability_dictionary(
+
             emotion_data
+
         )
 
         if isinstance(emotion_data, dict) and emotion_data:
 
             dominant_emotion = max(
+
                 emotion_data,
+
                 key=emotion_data.get
+
             )
 
         else:
 
             dominant_emotion = "N/A"
 
-        # -------------------------------------------------
-        # RACE
-        # -------------------------------------------------
+        # =================================================
+        # FIXED RACE
+        # =================================================
 
-        race_result = _run_single_attribute(
-            DeepFace,
-            image_array,
-            "race"
-        )
+        # No Race model is loaded.
+        race = FIXED_RACE
 
-        race_data = {}
+        dominant_race = FIXED_RACE
 
-        if race_result:
-
-            race_data = race_result.get(
-                "race",
-                {}
-            )
-
-        race_data = _clean_probability_dictionary(
-            race_data
-        )
-
-        if isinstance(race_data, dict) and race_data:
-
-            dominant_race = max(
-                race_data,
-                key=race_data.get
-            )
-
-        else:
-
-            dominant_race = "N/A"
-
-        # -------------------------------------------------
+        # =================================================
         # FINAL RESULT
-        # -------------------------------------------------
+        # =================================================
 
         combined_result = {
+
             "age": age,
+
             "gender": gender_data,
+
             "dominant_gender": dominant_gender,
+
             "emotion": emotion_data,
+
             "dominant_emotion": dominant_emotion,
-            "race": race_data,
+
+            "race": race,
+
             "dominant_race": dominant_race
+
         }
 
         return {
+
             "ok": True,
 
             "image": image,
@@ -404,49 +494,80 @@ def analyze_face(image_source):
 
             "dominant_emotion": dominant_emotion,
 
-            "race": race_data,
+            "race": race,
 
             "dominant_race": dominant_race
+
         }
 
     except Exception as e:
 
         return {
+
             "ok": False,
+
             "message": f"DeepFace analysis failed: {e}"
+
         }
 
+
+# =========================================================
+# FACE VERIFICATION
+# =========================================================
 
 def verify_faces(image1_source, image2_source):
     """
     Compare two faces using DeepFace.
 
-    Facenet is explicitly selected because it is
-    lighter than the default VGG-Face verification
-    model and is suitable for the cloud deployment.
+    FaceNet is explicitly selected for verification.
+
+    The images are resized before processing to reduce
+    CPU and memory usage.
     """
+
+    # -----------------------------------------------------
+    # LOAD DEEPFACE
+    # -----------------------------------------------------
 
     DeepFace, error = _get_deepface()
 
     if DeepFace is None:
 
         return {
+
             "ok": False,
+
             "message": (
+
                 "DeepFace could not be loaded.\n\n"
+
                 f"Technical error: {error}\n\n"
+
                 "Try running:\n"
+
                 "pip install -U deepface tf-keras"
+
             )
+
         }
 
     try:
 
-        # Load images
+        # -------------------------------------------------
+        # LOAD IMAGES
+        # -------------------------------------------------
+
         image1 = _load_image(image1_source)
+
         image2 = _load_image(image2_source)
 
+        # Resize before FaceNet verification.
+        image1 = _resize_for_ai(image1)
+
+        image2 = _resize_for_ai(image2)
+
         img1 = np.array(image1)
+
         img2 = np.array(image2)
 
         # -------------------------------------------------
@@ -454,14 +575,23 @@ def verify_faces(image1_source, image2_source):
         # -------------------------------------------------
 
         result = DeepFace.verify(
+
             img1_path=img1,
+
             img2_path=img2,
+
             model_name="Facenet",
+
             enforce_detection=False,
+
             detector_backend="opencv"
+
         )
 
-        # Clean NumPy values
+        # -------------------------------------------------
+        # CLEAN NUMPY VALUES
+        # -------------------------------------------------
+
         if isinstance(result, dict):
 
             result = result.copy()
@@ -472,28 +602,48 @@ def verify_faces(image1_source, image2_source):
 
                     result[key] = value.item()
 
+        # -------------------------------------------------
+        # GET VERIFICATION VALUES
+        # -------------------------------------------------
+
         verified = result.get(
+
             "verified",
+
             False
+
         )
 
         distance = result.get(
+
             "distance",
+
             None
+
         )
 
         threshold = result.get(
+
             "threshold",
+
             None
+
         )
 
         if isinstance(distance, np.generic):
+
             distance = float(distance)
 
         if isinstance(threshold, np.generic):
+
             threshold = float(threshold)
 
+        # -------------------------------------------------
+        # RETURN RESULT
+        # -------------------------------------------------
+
         return {
+
             "ok": True,
 
             "result": result,
@@ -507,15 +657,30 @@ def verify_faces(image1_source, image2_source):
             "image1": image1,
 
             "image2": image2
+
         }
 
     except Exception as e:
 
         return {
+
             "ok": False,
+
             "message": f"DeepFace verification failed: {e}"
+
         }
 
     finally:
 
-        _release_attribute_model()
+        # Clean TensorFlow resources after verification.
+        try:
+
+            import tensorflow as tf
+
+            tf.keras.backend.clear_session()
+
+        except Exception:
+
+            pass
+
+        gc.collect()
