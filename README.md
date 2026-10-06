@@ -1,62 +1,32 @@
-# VISIONLAB
+# VISIONLAB — Computer Vision Algorithm Laboratory
 
-## Computer Vision Algorithm Laboratory
+## Project Description
 
-VISIONLAB is an interactive educational laboratory designed to demonstrate and explore important Computer Vision and Face Analysis algorithms through a professional web interface.
+VISIONLAB is an interactive **Computer Vision Algorithm Laboratory** designed to help students and beginners understand how different computer vision techniques work through practical, visual demonstrations.
 
-The project allows users to understand how classical and deep-learning-based computer vision techniques work through interactive demonstrations, visual results, metrics, and explanations.
+The project brings together both **classical computer vision and deep-learning-based face analysis algorithms** in a single professional web application. Instead of only displaying theoretical explanations, VISIONLAB allows users to upload images or use prepared demo images, run the algorithms, and observe their actual outputs, measurements, and visual results.
 
----
+The laboratory demonstrates four major computer vision techniques:
 
-## 🚀 Live Demo
+- **Template Matching** – Locates a template inside a larger image using OpenCV template matching.
+- **Viola-Jones** – Performs face detection using Haar Cascade classifiers.
+- **DeepFace** – Performs facial analysis including age, gender probabilities, emotion, and race, along with face verification.
+- **FaceNet** – Demonstrates face embeddings and similarity-based face comparison.
 
-### 🌐 Try VISIONLAB Online
+Each algorithm is presented with its **working flow, input, processing, visual output, metrics, and simplified explanation**, making the system useful for both learning and experimentation.
+
+VISIONLAB is built using **Python, Streamlit, OpenCV, NumPy, Pillow, DeepFace, TensorFlow/Keras, and FaceNet-compatible technology**. The application follows a modular architecture where each algorithm is implemented separately for easier understanding and maintenance.
+
+## 🌐 Live Demo
+
+**Try VISIONLAB online:**
 
 https://visionlab-nrwubrtihijizwebqnk9xf.streamlit.app/
 
-No installation is required to try the deployed application.
+No installation is required to explore the deployed application.
 
----
+## 🔗 Source Code
 
-## 🎯 Algorithms Demonstrated
+**GitHub Repository:**
 
-VISIONLAB currently demonstrates four major Computer Vision techniques:
-
-### 1. Template Matching
-
-Demonstrates how OpenCV template matching can locate a smaller template image inside a larger image.
-
-**Technology:**
-- OpenCV
-- `cv2.matchTemplate()`
-- `cv2.minMaxLoc()`
-
-**Displays:**
-- Matching result
-- Similarity score
-- Match location
-- Template dimensions
-
----
-
-### 2. Viola-Jones
-
-Demonstrates classical real-time face detection using Haar Cascade classifiers.
-
-**Technology:**
-- OpenCV
-- Haar Cascade
-- `CascadeClassifier()`
-
-**Pipeline:**
-
-```text
-Haar-like Features
-        ↓
-Integral Image
-        ↓
-AdaBoost
-        ↓
-Cascade Classifier
-        ↓
-Face Detection
+https://github.com/yogasiri/VISIONLAB
